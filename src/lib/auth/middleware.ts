@@ -43,8 +43,15 @@ export const authMiddleware = createMiddleware({ type: "function" })
     const { requireUserId } = await import("./verify.server");
     const { resolveRoleToken } = await import("@/tracker/role.server");
     assertSameSiteRequest();
-    const userId = await requireUserId(context.bearerToken);
     const access = await resolveRoleToken(context.roleToken);
+    let userId: string;
+    try {
+      userId = await requireUserId(context.bearerToken);
+    } catch (error) {
+      // Standalone deploy has no Grok session. A valid app login is enough.
+      if (!access) throw error;
+      userId = `role:${access.username}`;
+    }
     return next({
       context: {
         userId,
@@ -53,4 +60,12 @@ export const authMiddleware = createMiddleware({ type: "function" })
         roleToken: context.roleToken,
       },
     });
+  });
+
+/** Same-site check only, so the username form can sign in before a session exists. */
+export const sameSiteMiddleware = createMiddleware({ type: "function" })
+  .server(async ({ next }) => {
+    const { assertSameSiteRequest } = await import("./isolation.server");
+    assertSameSiteRequest();
+    return next();
   });

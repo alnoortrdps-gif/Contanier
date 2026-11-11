@@ -3,7 +3,7 @@ import { z } from "zod";
 import { archiveArrived90611, ensureFishSeed, ensureSheetSeed, releaseArchiveWithoutCustoms, syncFishSheet, syncMeatArrivalOct19, syncMeatArrivalOct20, syncMeatOct17, syncMeatSheet, syncMeatVerify, syncSheetLinesOct28, syncSheetOct21, syncSheetOct22, syncSheetOct24, syncSheetPayOct22 } from "@/tracker/sheet-seed";
 import { lineLabel } from "@/tracker/lines";
 import { getSql } from "@/lib/db";
-import { authMiddleware } from "@/lib/auth/middleware";
+import { authMiddleware, sameSiteMiddleware } from "@/lib/auth/middleware";
 import {
   containerStatuses,
   currencies,
@@ -202,7 +202,7 @@ export const loadAccess = createServerFn({ method: "GET" })
   });
 
 export const loginRole = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([sameSiteMiddleware])
   .validator(z.object({ username: z.string().trim().min(1).max(40), password: z.string().min(1).max(40) }))
   .handler(async ({ data }) => {
     const { loginRoleAccount } = await import("@/tracker/role.server");
